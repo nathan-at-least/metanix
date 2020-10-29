@@ -1,0 +1,58 @@
+#!/bin/bash
+[ -n "${METANIX_TRACE:-}" ] && set -x
+set -efuo pipefail
+
+function main
+{
+  local specimen="$(readlink -f .)"
+  if [ $# -gt 0 ]
+  then
+    specimen="$1"
+    shift
+    [ $# -eq 0 ] || fail "Unexpected args: $*"
+  fi
+
+  run build-specimen "$specimen"
+}
+
+function build-specimen
+{
+  local specimen="$1"
+  if [ -f "$specimen/Cargo.toml" ]
+  then
+    run build-specimen-cargo "$specimen"
+  else
+    fail "Unknown package format for specimen: $specimen"
+  fi
+}
+
+function build-specimen-cargo
+{
+  local specimen="$1"
+  TMPSRC="$(mktemp -d "metanix.$(basename "$specimen").XXX")"
+  trap exit-hook EXIT
+
+  local nixgen="$TMPSRC/Cargo.nix"
+
+  run crate2nix generate -f "$specimen/Cargo.toml" -o "$nixgen"
+  run nix build -f "$nixgen" rootCrate.build
+}
+
+function run
+{
+  echo "Running: $*"
+  eval "$@"
+}
+
+function fail
+{
+  echo "Fail: $*"
+  exit 1
+}
+
+function exit-hook
+{
+  run rm -r "$TMPSRC"
+}
+
+main "$@"
