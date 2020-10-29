@@ -2,9 +2,58 @@
 [ -n "${METANIX_TRACE:-}" ] && set -x
 set -efuo pipefail
 
+SCRIPT="$(readlink -f "$0")"
+MYNAME="$(basename "$SCRIPT")"
+RESOURCEDIR="$(readlink -f "$(dirname "$SCRIPT")/../share/$MYNAME")"
+
 function main
 {
+  local subcommand='help'
   local specimen="$(readlink -f .)"
+  if [ $# -gt 0 ]
+  then
+    subcommand="$1"
+    shift
+  fi
+
+  case "$subcommand" in
+    help|--help) show-help ;;
+    build) build-or-install-specimen 'nix build' "$@";;
+    install) build-or-install-specimen 'nix-env -i' "$@";;
+    *)
+      echo "Error: Unknown subcommand: $subcommand"
+      echo
+      show-help
+      ;;
+  esac
+}
+
+function show-help
+{
+  sed 's/^    //' <<__EOF
+    $(basename "$0") <subcommand>
+
+    Subcommands:
+
+      help | --help
+        This help text.
+
+      build [ <specimen> ]
+        Generate a nix expression, if possible, and build it with 'nix-build'.
+
+      install [ <specimen> ]
+        Generate a nix expression, if possible, and install it with 'nix-env'.
+
+    <specimen> is a package root directory, and if not provided defaults
+    to the current directory.
+__EOF
+}
+
+function build-or-install-specimen
+{
+  NIXCMD="$1"
+  shift
+
   if [ $# -gt 0 ]
   then
     specimen="$1"
@@ -12,30 +61,36 @@ function main
     [ $# -eq 0 ] || fail "Unexpected args: $*"
   fi
 
-  run build-specimen "$specimen"
+  process-specimen "$specimen"
 }
 
-function build-specimen
+function process-specimen
 {
   local specimen="$1"
   if [ -f "$specimen/Cargo.toml" ]
   then
-    run build-specimen-cargo "$specimen"
+    process-specimen-cargo "$specimen"
   else
     fail "Unknown package format for specimen: $specimen"
   fi
 }
 
-function build-specimen-cargo
+function process-specimen-cargo
 {
   local specimen="$1"
-  TMPSRC="$(mktemp -d "metanix.$(basename "$specimen").XXX")"
-  trap exit-hook EXIT
+
+  echo "Identified cargo package: $specimen"
+
+  TMPSRC="$(mktemp --tmpdir -d "metanix.$(basename "$specimen").XXX")"
+
+  cp "$RESOURCEDIR/cargo-default.nix" "$TMPSRC/default.nix"
+  chmod -R u+w "$TMPSRC"
 
   local nixgen="$TMPSRC/Cargo.nix"
 
   run crate2nix generate -f "$specimen/Cargo.toml" -o "$nixgen"
-  run nix build -f "$nixgen" rootCrate.build
+  run $NIXCMD -f "$TMPSRC"
+  run rm -r "$TMPSRC"
 }
 
 function run
@@ -48,11 +103,6 @@ function fail
 {
   echo "Fail: $*"
   exit 1
-}
-
-function exit-hook
-{
-  run rm -r "$TMPSRC"
 }
 
 main "$@"
