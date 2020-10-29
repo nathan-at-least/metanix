@@ -9,7 +9,6 @@ RESOURCEDIR="$(readlink -f "$(dirname "$SCRIPT")/../share/$MYNAME")"
 function main
 {
   local subcommand='help'
-  local specimen="$(readlink -f .)"
   if [ $# -gt 0 ]
   then
     subcommand="$1"
@@ -54,6 +53,8 @@ function build-or-install-specimen
   NIXCMD="$1"
   shift
 
+  local specimen='.'
+
   if [ $# -gt 0 ]
   then
     specimen="$1"
@@ -61,7 +62,7 @@ function build-or-install-specimen
     [ $# -eq 0 ] || fail "Unexpected args: $*"
   fi
 
-  process-specimen "$specimen"
+  process-specimen "$(readlink -f "$specimen")"
 }
 
 function process-specimen
