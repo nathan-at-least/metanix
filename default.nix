@@ -10,9 +10,9 @@ let
       pname = "crate2nix";
       version = "0.8.0";
       name = "${pname}-${version}";
-    in
-      stdenv.mkDerivation {
-        inherit pname version;
+      src = stdenv.mkDerivation {
+        inherit version;
+        pname = "${pname}-src";
         src = fetchurl {
           name = "${name}.tar.gz";
           url = "https://github.com/kolloch/${pname}/tarball/${version}";
@@ -23,9 +23,11 @@ let
           set -e
           mkdir "$out"
           cd "$out"
-          tar -xf "$src" --strip-components 1
+          tar -xvf "$src" --strip-components 1
         '';
       };
+    in
+      import "${src}" {};
 in
   stdenv.mkDerivation rec {
     inherit (pkginfo) pname version;
