@@ -23,7 +23,7 @@ RUN sh install-nix.sh --no-daemon
 
 # Install metanix and git:
 RUN nix-env -i git
-RUN nix-env -if 'https://github.com/nathan-at-least/metanix/tarball/reqwest-docker-examples'
+RUN nix-env -if 'https://github.com/nathan-at-least/metanix/tarball/master'
 
 # Now checkout and build `reqwest`:
 RUN git clone 'https://github.com/seanmonstar/reqwest'
