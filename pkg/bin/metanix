@@ -2,9 +2,10 @@
 [ -n "${METANIX_TRACE:-}" ] && set -x
 set -efuo pipefail
 
-SCRIPT="$(readlink -f "$0")"
-MYNAME="$(basename "$SCRIPT")"
-RESOURCEDIR="$(readlink -f "$(dirname "$SCRIPT")/../share/$MYNAME")"
+readonly CRATE2NIX="$(which crate2nix)"
+readonly SCRIPT="$(readlink -f "$0")"
+readonly MYNAME="$(basename "$SCRIPT")"
+readonly RESOURCEDIR="$(readlink -f "$(dirname "$SCRIPT")/../share/$MYNAME")"
 
 function main
 {
@@ -89,7 +90,7 @@ function process-specimen-cargo
 
   local nixgen="$TMPSRC/Cargo.nix"
 
-  run crate2nix generate -f "$specimen/Cargo.toml" -o "$nixgen"
+  run "$CRATE2NIX" generate -f "$specimen/Cargo.toml" -o "$nixgen"
   run $NIXCMD -f "$TMPSRC"
   run rm -r "$TMPSRC"
 }

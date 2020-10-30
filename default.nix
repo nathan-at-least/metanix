@@ -35,8 +35,12 @@ in
     ];
     builder = writeScript "${pname}-builder.sh" ''
       source "$stdenv/setup"
-      mkdir -p "$out"
-      cp -a "$src"/pkg/* "$out"
-      ln -s "${crate2nix}/bin/crate2nix" "$out/bin/"
+      mkdir -p "$out/bin"
+      sed \
+        's|readonly CRATE2NIX=.*$|readonly CRATE2NIX="${crate2nix}/bin/crate2nix"|' \
+        "$src/pkg/bin/metanix" \
+        > "$out/bin/metanix"
+      chmod ugo+x "$out/bin"/*
+      cp -a "$src"/pkg/share "$out/share"
     '';
   }
