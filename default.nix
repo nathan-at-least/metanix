@@ -1,5 +1,5 @@
 let
-  inherit (import <nixpkgs> {}) fetchurl stdenv writeScript;
+  inherit (import <nixpkgs> {}) cargo fetchurl stdenv writeScript;
 
   pkginfo =
     with builtins;
@@ -33,13 +33,14 @@ in
     inherit (pkginfo) pname version;
     src = ./.;
     nativeBuildInputs = [
-      crate2nix
+      cargo crate2nix
     ];
     builder = writeScript "${pname}-builder.sh" ''
       source "$stdenv/setup"
       mkdir -p "$out/bin"
-      sed \
-        's|readonly CRATE2NIX=.*$|readonly CRATE2NIX="${crate2nix}/bin/crate2nix"|' \
+      cat "$src/pkg/bin/metanix" \
+       | sed 's|CARGO=.*$|CARGO="${cargo}/bin/cargo"|' \
+       | sed 's|CRATE2NIX=.*$|CRATE2NIX="${crate2nix}/bin/crate2nix"|' \
         "$src/pkg/bin/metanix" \
         > "$out/bin/metanix"
       chmod ugo+x "$out/bin"/*

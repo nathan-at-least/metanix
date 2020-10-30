@@ -2,7 +2,9 @@
 [ -n "${METANIX_TRACE:-}" ] && set -x
 set -efuo pipefail
 
+readonly CARGO="$(which cargo)"
 readonly CRATE2NIX="$(which crate2nix)"
+
 readonly SCRIPT="$(readlink -f "$0")"
 readonly MYNAME="$(basename "$SCRIPT")"
 readonly RESOURCEDIR="$(readlink -f "$(dirname "$SCRIPT")/../share/$MYNAME")"
@@ -84,21 +86,32 @@ function process-specimen-cargo
   echo "Identified cargo package: $specimen"
 
   TMPSRC="$(mktemp --tmpdir -d "metanix.$(basename "$specimen").XXX")"
+  local srcdir="$TMPSRC/src"
+  local nixdir="$TMPSRC/nix"
 
-  cp "$RESOURCEDIR/cargo-default.nix" "$TMPSRC/default.nix"
+  cp -a "$specimen" "$srcdir"
+  cp "$RESOURCEDIR/cargo-default.nix" "$nixdir/default.nix"
   chmod -R u+w "$TMPSRC"
 
-  local nixgen="$TMPSRC/Cargo.nix"
+  local nixgen="$nixdir/Cargo.nix"
 
-  run "$CRATE2NIX" generate -f "$specimen/Cargo.toml" -o "$nixgen"
-  run $NIXCMD -f "$TMPSRC"
+  run "$CARGO" generate-lockfile -f "$srcdir/Cargo.toml"
+  run "$CRATE2NIX" generate -f "$srcdir/Cargo.toml" -o "$nixgen"
+  run $NIXCMD -f "$nixdir"
   run rm -r "$TMPSRC"
 }
 
 function run
 {
-  echo "Running: $*"
-  eval "$@"
+  local first="$1"
+  shift
+  local descfirst="$first"
+  if [[ "$first" =~ /nix/store/ ]]
+  then
+    descfirst="<nix store>/$(basename "$first")"
+  fi
+  echo "Running: $descfirst $*"
+  eval "$first" "$@"
 }
 
 function fail
