@@ -96,7 +96,7 @@ function process-specimen-cargo
 
   local nixgen="$nixdir/Cargo.nix"
 
-  run "$CARGO" generate-lockfile -f "$srcdir/Cargo.toml"
+  run "$CARGO" generate-lockfile --manifest-path "$srcdir/Cargo.toml"
   run "$CRATE2NIX" generate -f "$srcdir/Cargo.toml" -o "$nixgen"
   run $NIXCMD -f "$nixdir"
   run rm -r "$TMPSRC"
