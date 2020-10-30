@@ -37,5 +37,6 @@ in
       source "$stdenv/setup"
       mkdir -p "$out"
       cp -a "$src"/pkg/* "$out"
+      ln -s "${crate2nix}/bin/crate2nix" "$out/bin/"
     '';
   }
