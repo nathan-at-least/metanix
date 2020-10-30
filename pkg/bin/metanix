@@ -90,6 +90,7 @@ function process-specimen-cargo
   local nixdir="$TMPSRC/nix"
 
   cp -a "$specimen" "$srcdir"
+  mkdir "$nixdir"
   cp "$RESOURCEDIR/cargo-default.nix" "$nixdir/default.nix"
   chmod -R u+w "$TMPSRC"
 
