@@ -10,9 +10,9 @@ let
       pname = "crate2nix";
       version = "0.8.0";
       name = "${pname}-${version}";
-    in
-      stdenv.mkDerivation {
-        inherit pname version;
+      src = stdenv.mkDerivation {
+        inherit version;
+        pname = "${pname}-src";
         src = fetchurl {
           name = "${name}.tar.gz";
           url = "https://github.com/kolloch/${pname}/tarball/${version}";
@@ -26,6 +26,8 @@ let
           tar -xf "$src" --strip-components 1
         '';
       };
+    in
+      import "${src}" {};
 in
   stdenv.mkDerivation rec {
     inherit (pkginfo) pname version;
@@ -35,7 +37,12 @@ in
     ];
     builder = writeScript "${pname}-builder.sh" ''
       source "$stdenv/setup"
-      mkdir -p "$out"
-      cp -a "$src"/pkg/* "$out"
+      mkdir -p "$out/bin"
+      sed \
+        's|readonly CRATE2NIX=.*$|readonly CRATE2NIX="${crate2nix}/bin/crate2nix"|' \
+        "$src/pkg/bin/metanix" \
+        > "$out/bin/metanix"
+      chmod ugo+x "$out/bin"/*
+      cp -a "$src"/pkg/share "$out/share"
     '';
   }
