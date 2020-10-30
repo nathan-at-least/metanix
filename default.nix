@@ -23,7 +23,7 @@ let
           set -e
           mkdir "$out"
           cd "$out"
-          tar -xvf "$src" --strip-components 1
+          tar -xf "$src" --strip-components 1
         '';
       };
     in
