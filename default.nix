@@ -39,9 +39,8 @@ in
       source "$stdenv/setup"
       mkdir -p "$out/bin"
       cat "$src/pkg/bin/metanix" \
-       | sed 's|CARGO=.*$|CARGO="${cargo}/bin/cargo"|' \
-       | sed 's|CRATE2NIX=.*$|CRATE2NIX="${crate2nix}/bin/crate2nix"|' \
-        "$src/pkg/bin/metanix" \
+        | sed 's|^readonly CARGO=.*$|readonly CARGO="${cargo}/bin/cargo"|' \
+        | sed 's|^readonly CRATE2NIX=.*$|readonly CRATE2NIX="${crate2nix}/bin/crate2nix"|' \
         > "$out/bin/metanix"
       chmod ugo+x "$out/bin"/*
       cp -a "$src"/pkg/share "$out/share"
