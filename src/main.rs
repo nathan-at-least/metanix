@@ -6,7 +6,14 @@ mod optparse;
 
 pub use error::Error;
 
-fn main() -> Result<(), Error> {
+fn main() {
+    if let Err(e) = inner_main() {
+        println!("Error: {}", e);
+        std::process::exit(1);
+    }
+}
+
+fn inner_main() -> Result<(), Error> {
     use optparse::Command;
 
     let args = std::env::args().skip(1);

@@ -11,3 +11,18 @@ impl From<std::io::Error> for Error {
         Error::StdIO(e)
     }
 }
+
+use std::fmt;
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use Error::*;
+
+        match self {
+            StdIO(e) => write!(f, "IO Error: {}", e),
+            UnknownArgument(name, val) => write!(f, "Unknown {}: {:?}", name, val),
+            MissingArgument(name) => write!(f, "Missing argument: {}", name),
+            UnexpectedArgument(val) => write!(f, "Unexpected argument: {:?}", val),
+        }
+    }
+}
