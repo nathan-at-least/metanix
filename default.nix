@@ -1,26 +1,13 @@
 let
-  inherit (import <nixpkgs> {}) cargo fetchurl stdenv writeScript;
+  inherit (import <nixpkgs> {})
+    cargo fetchurl rustPlatform stdenv writeScript;
 
-  pkginfo =
-    with builtins;
-    fromTOML (readFile ./package.toml);
-
+  cargotoml = import ./nix/readTOML.nix ./Cargo.toml;
   crate2nix = import ./nix/crate2nix.nix;
 in
-  stdenv.mkDerivation rec {
-    inherit (pkginfo) pname version;
+  rustPlatform.buildRustPackage {
+    pname = cargotoml.package.name;
+    version = cargotoml.package.version;
     src = ./.;
-    nativeBuildInputs = [
-      cargo crate2nix
-    ];
-    builder = writeScript "${pname}-builder.sh" ''
-      source "$stdenv/setup"
-      mkdir -p "$out/bin"
-      cat "$src/pkg/bin/metanix" \
-        | sed 's|^readonly CARGO=.*$|readonly CARGO="${cargo}/bin/cargo"|' \
-        | sed 's|^readonly CRATE2NIX=.*$|readonly CRATE2NIX="${crate2nix}/bin/crate2nix"|' \
-        > "$out/bin/metanix"
-      chmod ugo+x "$out/bin"/*
-      cp -a "$src"/pkg/share "$out/share"
-    '';
+    cargoSha256 = "sha256:11fpkqncq9cz9bv0axmvm7rak90hjjxn4d5pq6ic8xz04cl1hhvc";
   }
