@@ -10,4 +10,8 @@ in
     version = cargotoml.package.version;
     src = ./.;
     cargoSha256 = "sha256:11fpkqncq9cz9bv0axmvm7rak90hjjxn4d5pq6ic8xz04cl1hhvc";
+
+    # Pass through executable paths:
+    NIXDEP_CARGO = "${cargo}/bin/cargo";
+    NIXDEP_CRATE2NIX = "${crate2nix}/bin/crate2nix";
   }
