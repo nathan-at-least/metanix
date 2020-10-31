@@ -20,9 +20,9 @@ impl fmt::Display for Error {
 
         match self {
             StdIO(e) => write!(f, "IO Error: {}", e),
-            UnknownArgument(name, val) => write!(f, "Unknown {}: {:?}", name, val),
-            MissingArgument(name) => write!(f, "Missing argument: {}", name),
-            UnexpectedArgument(val) => write!(f, "Unexpected argument: {:?}", val),
+            UnknownArgument(name, val) => write!(f, "unknown <{}> {:?}", name, val),
+            MissingArgument(name) => write!(f, "missing argument <{}>", name),
+            UnexpectedArgument(val) => write!(f, "unexpected argument {:?}", val),
         }
     }
 }

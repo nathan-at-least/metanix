@@ -8,7 +8,11 @@ pub use error::Error;
 
 fn main() {
     if let Err(e) = inner_main() {
-        println!("Error: {}", e);
+        println!(
+            "{0} error: {1}\n\nFor usage help run: {0} --help",
+            env!("CARGO_PKG_NAME"),
+            e,
+        );
         std::process::exit(1);
     }
 }
