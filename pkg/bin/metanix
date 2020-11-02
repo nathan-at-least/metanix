@@ -2,12 +2,10 @@
 [ -n "${METANIX_TRACE:-}" ] && set -x
 set -efuo pipefail
 
-readonly CARGO="$(which cargo)"
-readonly CRATE2NIX="$(which crate2nix)"
-
 readonly SCRIPT="$(readlink -f "$0")"
 readonly MYNAME="$(basename "$SCRIPT")"
 readonly RESOURCEDIR="$(readlink -f "$(dirname "$SCRIPT")/../share/$MYNAME")"
+readonly META_NIX="${RESOURCEDIR}/meta.nix"
 
 function main
 {
@@ -20,8 +18,7 @@ function main
 
   case "$subcommand" in
     help|--help) show-help ;;
-    build) build-or-install-specimen 'nix build' "$@";;
-    install) build-or-install-specimen 'nix-env -i' "$@";;
+    build|install) build-or-install-specimen "$subcommand" "$@";;
     *)
       echo "Error: Unknown subcommand: $subcommand"
       echo
@@ -40,20 +37,20 @@ function show-help
       help | --help
         This help text.
 
-      build [ <specimen> ]
+      build [ <targetpath> ]
         Generate a nix expression, if possible, and build it with 'nix-build'.
 
-      install [ <specimen> ]
+      install [ <targetpath> ]
         Generate a nix expression, if possible, and install it with 'nix-env'.
 
-    <specimen> is a package root directory, and if not provided defaults
+    <targetpath> is a package root directory, and if not provided defaults
     to the current directory.
 __EOF
 }
 
 function build-or-install-specimen
 {
-  NIXCMD="$1"
+  local subcommand="$1"
   shift
 
   local specimen='.'
@@ -65,54 +62,25 @@ function build-or-install-specimen
     [ $# -eq 0 ] || fail "Unexpected args: $*"
   fi
 
-  process-specimen "$(readlink -f "$specimen")"
+  process-specimen "$subcommand" "$(readlink -f "$specimen")"
 }
 
 function process-specimen
 {
-  local specimen="$1"
-  if [ -f "$specimen/Cargo.toml" ]
-  then
-    process-specimen-cargo "$specimen"
-  else
-    fail "Unknown package format for specimen: $specimen"
-  fi
-}
+  local subcommand="$1"
+  local specimen="$2"
 
-function process-specimen-cargo
-{
-  local specimen="$1"
-
-  echo "Identified cargo package: $specimen"
-
-  TMPSRC="$(mktemp --tmpdir -d "metanix.$(basename "$specimen").XXX")"
-  local srcdir="$TMPSRC/src"
-  local nixdir="$TMPSRC/nix"
-
-  cp -a "$specimen" "$srcdir"
-  mkdir "$nixdir"
-  cp "$RESOURCEDIR/cargo-default.nix" "$nixdir/default.nix"
-  chmod -R u+w "$TMPSRC"
-
-  local nixgen="$nixdir/Cargo.nix"
-
-  run "$CARGO" generate-lockfile --manifest-path "$srcdir/Cargo.toml"
-  run "$CRATE2NIX" generate -f "$srcdir/Cargo.toml" -o "$nixgen"
-  run $NIXCMD -f "$nixdir"
-  run rm -r "$TMPSRC"
+  case "$subcommand" in
+    build) run nix-build --arg targetPath "$1" "$META_NIX" ;;
+    install) run nix-env --arg targetPath "$1" --install -f "$META_NIX" ;;
+    *) fail "Internal error - unexpected subcommand: $subcommand"
+  esac
 }
 
 function run
 {
-  local first="$1"
-  shift
-  local descfirst="$first"
-  if [[ "$first" =~ /nix/store/ ]]
-  then
-    descfirst="<nix store>/$(basename "$first")"
-  fi
-  echo "Running: $descfirst $*"
-  eval "$first" "$@"
+  echo "Running: $*"
+  eval "$@"
 }
 
 function fail
