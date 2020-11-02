@@ -69,10 +69,11 @@ function process-specimen
 {
   local subcommand="$1"
   local specimen="$2"
+  local argargs="--arg targetPath \\\"$specimen\\\""
 
   case "$subcommand" in
-    build) run nix-build --arg targetPath "$1" "$META_NIX" ;;
-    install) run nix-env --arg targetPath "$1" --install -f "$META_NIX" ;;
+    build) run nix-build $argargs "$META_NIX" ;;
+    install) run nix-env $argargs --install -f "$META_NIX" ;;
     *) fail "Internal error - unexpected subcommand: $subcommand"
   esac
 }

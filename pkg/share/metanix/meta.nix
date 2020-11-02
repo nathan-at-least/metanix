@@ -5,22 +5,25 @@ let
   inherit (lib.debug) traceSeq;
 
   handlers = {
-    "default.nix" = import;
+    "default.nix" = (_: import);
+    "poetry.lock" = import ./poetry-handler.nix;
   };
 in
   { targetPath }:
+  assert builtins.typeOf targetPath == "string";
   let
-    targetPathVal = /. + (traceSeq "targetPath ${targetPath}; type: ${builtins.typeOf targetPath}" targetPath);
+    targetPathVal = /. + (traceSeq "targetPath ${targetPath}" targetPath);
     mkCandidate = fname: loader: {
       inherit loader;
-      path = targetPathVal + "/${fname}";
+      targetPath = targetPathVal;
+      pkgPath = targetPathVal + "/${fname}";
     };
     candidates = mapAttrsToList mkCandidate handlers;
-    load = result: { path, loader }:
+    load = result: { targetPath, pkgPath, loader }:
       if result != null
       then result
-      else if pathExists path
-      then traceSeq "Found:" (traceSeq path (loader path))
+      else if pathExists pkgPath
+      then traceSeq "Found:" (traceSeq pkgPath (loader targetPath pkgPath))
       else null;
     result = foldl' load null candidates;
   in
