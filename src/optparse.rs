@@ -27,8 +27,9 @@ where
     let cmd = popargs.pop("command")?;
     if cmd == "build" || cmd == "install" {
         use std::path::PathBuf;
+        let specdef = PathBuf::from(".");
 
-        let specimen = PathBuf::from(popargs.pop("specimen")?);
+        let specimen = popargs.pop_opt().map(PathBuf::from).unwrap_or(specdef);
         Ok(match cmd.as_ref() {
             "build" => Command::Build(specimen),
             "install" => Command::Install(specimen),
@@ -50,7 +51,11 @@ where
     I: Iterator<Item = String>,
 {
     fn pop(&mut self, name: &'static str) -> Result<String, Error> {
-        self.0.next().ok_or(Error::MissingArgument(name))
+        self.pop_opt().ok_or(Error::MissingArgument(name))
+    }
+
+    fn pop_opt(&mut self) -> Option<String> {
+        self.0.next()
     }
 
     fn finish(mut self) -> Result<(), Error> {

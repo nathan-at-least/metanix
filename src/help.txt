@@ -1,0 +1,15 @@
+{PROGNAME} <command> [ ... ]
+
+Commands:
+
+  help | --help
+    This help text.
+
+  build [ <specimen> ]
+    Generate a nix expression, if possible, and build it with 'nix-build'.
+
+  install [ <specimen> ]
+    Generate a nix expression, if possible, and install it with 'nix-env'.
+
+For the `build` & `install` commands <specimen> is a package root
+directory, and if not provided defaults to the current directory.
