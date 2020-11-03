@@ -1,0 +1,66 @@
+{ metalib }:
+let
+  inherit (builtins) elemAt isList length match split substring toJSON;
+  nixpkgs = import <nixpkgs> {};
+  inherit (nixpkgs) fetchurl lib stdenv writeScript;
+  inherit (lib.attrsets) mapAttrsToList;
+  inherit (lib.lists) findFirst;
+  inherit (lib.strings) hasSuffix;
+  inherit (metalib) check traceVal;
+in
+  poetry:
+    let
+      nixpy =
+        let
+          rgx = "\\^([23])\.([0-9])";
+          poetvs = poetry.metadata."python-versions";
+          groups =
+            check.value (v: isList v && length v == 2)
+            "Couldn't parse python versions: ${poetvs}"
+            (match rgx poetvs);
+          major = elemAt groups 0;
+          minor = elemAt groups 1;
+        in
+          nixpkgs."python${major}${minor}";
+
+      mkDep = { name, version, ... }:
+        let
+          finfos = poetry.metadata.files."${name}";
+          fHasSuffix = suffix: {file, hash}: hasSuffix suffix file;
+          tarball = findFirst (fHasSuffix ".tar.gz") null finfos;
+          wheelOrTarball = findFirst (fHasSuffix ".whl") tarball finfos;
+          finfo =
+            check.notNull 
+            "Couldn't find file for ${name} ${version}: ${toJSON finfos}"
+            wheelOrTarball;
+
+          fname = finfo.file;
+          sha256 = finfo.hash;
+          url =
+            if hasSuffix ".whl" fname
+            then
+              let
+                pyvers = elemAt (split "-" fname) 4;
+              in
+                "https://files.pythonhosted.org/packages/${pyvers}/${substring 0 1 name}/${name}/${fname}"
+            else
+              "https://files.pythonhosted.org/packages/source/${fname}";
+        in
+          stdenv.mkDerivation {
+            inherit version;
+            pname = name;
+            src = fetchurl {
+              inherit sha256 url;
+            };
+            nativeBuildInputs = [
+              nixpy
+              nixpy.pkgs.pip
+              nixpy.pkgs.setuptools
+            ];
+            pyLibPrefix = nixpy.libPrefix;
+            builder = ./builder.sh;
+          };
+    in {
+      python = nixpy;
+      pydeps = map mkDep poetry.package;
+    }
