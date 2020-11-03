@@ -12,7 +12,7 @@ in {
       poetrylock = readTOML (projdir + "/poetry.lock");
       inherit (pyproject.tool.poetry) name version;
 
-      python = selectPython pyproject;
+      python = selectPython poetrylock;
       pydeps = mkPyDeps python poetrylock;
       poetryCore = mkPoetryCore python;
     in
