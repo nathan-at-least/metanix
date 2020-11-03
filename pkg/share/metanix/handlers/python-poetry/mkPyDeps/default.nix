@@ -8,21 +8,8 @@ let
   inherit (lib.strings) hasSuffix;
   inherit (metalib) check traceVal;
 in
-  poetry:
+  python: poetry:
     let
-      nixpy =
-        let
-          rgx = "\\^([23])\.([0-9])";
-          poetvs = poetry.metadata."python-versions";
-          groups =
-            check.value (v: isList v && length v == 2)
-            "Couldn't parse python versions: ${poetvs}"
-            (match rgx poetvs);
-          major = elemAt groups 0;
-          minor = elemAt groups 1;
-        in
-          nixpkgs."python${major}${minor}";
-
       mkDep = { name, version, ... }:
         let
           finfos = poetry.metadata.files."${name}";
@@ -48,19 +35,18 @@ in
         in
           stdenv.mkDerivation {
             inherit version;
-            pname = name;
+            pname = "python${python.pythonVersion}-${name}";
             src = fetchurl {
               inherit sha256 url;
             };
             nativeBuildInputs = [
-              nixpy
-              nixpy.pkgs.pip
-              nixpy.pkgs.setuptools
+              python
+              python.pkgs.pip
+              python.pkgs.setuptools
+              python.pkgs.wheel
             ];
-            pyLibPrefix = nixpy.libPrefix;
+            pyLibPrefix = python.libPrefix;
             builder = ./builder.sh;
           };
-    in {
-      python = nixpy;
-      pydeps = map mkDep poetry.package;
-    }
+    in
+      map mkDep poetry.package

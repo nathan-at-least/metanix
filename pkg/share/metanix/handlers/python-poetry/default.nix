@@ -3,7 +3,7 @@ let
   inherit (builtins) pathExists;
   inherit (import <nixpkgs> {}) stdenv writeScript symlinkJoin;
   inherit (metalib) readTOML traceVal;
-  inherit (metalib.impdir ./.) mkPyDeps;
+  inherit (metalib.impdir ./.) mkPyDeps selectPython mkPoetryCore;
 in {
   check = p: pathExists (p + "/poetry.lock");
   load = projdir:
@@ -11,23 +11,24 @@ in {
       pyproject = readTOML (projdir + "/pyproject.toml");
       poetrylock = readTOML (projdir + "/poetry.lock");
       inherit (pyproject.tool.poetry) name version;
-      inherit (mkPyDeps poetrylock) python pydeps;
+
+      python = selectPython pyproject;
+      pydeps = mkPyDeps python poetrylock;
+      poetryCore = mkPoetryCore python;
     in
       stdenv.mkDerivation {
-        inherit version;
+        inherit version poetryCore;
         pname = name;
         src = projdir;
         nativeBuildInputs = [
           python
           python.pkgs.pip
-          (symlinkJoin {
-            name = "${name}-${version}-deps";
-            paths = pydeps;
-          })
-        ];
+          poetryCore
+        ] ++ pydeps;
         builder = writeScript "${name}-builder.sh" ''
-          set -x
-          echo "$nativeBuildInputs"
+          source "$stdenv/setup"
+          export PYTHONPATH="$(echo "$PYTHONPATH" | tr ':' '\n' | sort -u | tr '\n' ':')"
+          pip install --no-deps --prefix "$out" "$src"
         '';
       };
 }
