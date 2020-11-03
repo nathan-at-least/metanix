@@ -1,7 +1,7 @@
+{ metalib }:
 let
   inherit (import <nixpkgs> {}) lib;
   inherit (lib.attrsets) mapAttrsToList;
-  impdir = import ../impdir.nix;
-  mods = impdir ./.;
+  mods = metalib.impdir ./.;
 in
   mapAttrsToList (name: a: a // { inherit name; }) mods

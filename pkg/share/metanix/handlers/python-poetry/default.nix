@@ -1,13 +1,15 @@
+{ metalib }:
 let
   inherit (builtins) pathExists;
   inherit (import <nixpkgs> {}) stdenv writeScript;
-  inherit (import ../metalib) readTOML;
+  inherit (metalib) readTOML;
 in {
   check = p: pathExists (p + "/poetry.lock");
   load = projdir:
     let
       pyproject = readTOML (projdir + "/pyproject.toml");
       poetrylock = readTOML (projdir + "/poetry.lock");
+
       inherit (pyproject.tool.poetry) name version;
     in
       stdenv.mkDerivation {

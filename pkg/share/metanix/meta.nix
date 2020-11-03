@@ -5,7 +5,9 @@ let
   inherit (lib.debug) traceSeq;
   inherit (lib.lists) findFirst;
 
-  handlers = import ./handlers;
+  handlers = import ./handlers {
+    metalib = import ./metalib;
+  };
 in
   { targetPath }:
   assert builtins.typeOf targetPath == "string";
