@@ -1,33 +1,20 @@
 let
-  inherit (builtins) foldl' pathExists;
+  inherit (builtins) foldl' pathExists throw;
   inherit (import <nixpkgs> {}) lib;
   inherit (lib.attrsets) mapAttrsToList;
   inherit (lib.debug) traceSeq;
+  inherit (lib.lists) findFirst;
 
-  handlers = {
-    "default.nix" = (_: import);
-    "poetry.lock" = import ./poetry-handler.nix;
-  };
+  handlers = import ./handlers;
 in
   { targetPath }:
   assert builtins.typeOf targetPath == "string";
   let
-    targetPathVal = /. + (traceSeq "targetPath ${targetPath}" targetPath);
-    mkCandidate = fname: loader: {
-      inherit loader;
-      targetPath = targetPathVal;
-      pkgPath = targetPathVal + "/${fname}";
-    };
-    candidates = mapAttrsToList mkCandidate handlers;
-    load = result: { targetPath, pkgPath, loader }:
-      if result != null
-      then result
-      else if pathExists pkgPath
-      then traceSeq "Found:" (traceSeq pkgPath (loader targetPath pkgPath))
-      else null;
-    result = foldl' load null candidates;
+    pathVal = /. + targetPath;
+    handler = findFirst (handler: handler.check pathVal) null handlers;
   in
-    if result != null
-    then result
-    else
-      builtins.throw "Could not recognize ${targetPathVal} package format."
+    if handler == null
+    then throw "Could not recognize ${targetPath} package format."
+    else traceSeq "Recognized package format ${handler.name}" (
+      handler.load pathVal
+    )

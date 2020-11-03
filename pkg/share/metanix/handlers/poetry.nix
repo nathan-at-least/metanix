@@ -1,11 +1,13 @@
 let
+  inherit (builtins) pathExists;
   inherit (import <nixpkgs> {}) stdenv writeScript;
-  inherit (import ./metalib) readTOML;
-in
-  projdir: poetrylockpath:
+  inherit (import ../metalib) readTOML;
+in {
+  check = p: pathExists (p + "/poetry.lock");
+  load = projdir:
     let
       pyproject = readTOML (projdir + "/pyproject.toml");
-      poetrylock = readTOML poetrylockpath;
+      poetrylock = readTOML (projdir + "/poetry.lock");
       inherit (pyproject.tool.poetry) name version;
     in
       stdenv.mkDerivation {
@@ -15,4 +17,5 @@ in
         builder = writeScript "${name}-builder.sh" ''
           echo 'BUILDER NOT IMPLEMENTED.'
         '';
-      }
+      };
+}

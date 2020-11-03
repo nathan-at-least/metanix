@@ -80,7 +80,7 @@ function process-specimen
 
 function run
 {
-  echo "Running: $*"
+  #echo "Running: $*"
   eval "$@"
 }
 
