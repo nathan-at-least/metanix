@@ -1,5 +1,5 @@
 #!/bin/bash
-[ -n "${METANIX_TRACE:-}" ] && set -x
+[ "${METANIX_TRACE:-0}" -gt 1 ] && set -x
 set -efuo pipefail
 
 readonly SCRIPT="$(readlink -f "$0")"
@@ -69,18 +69,17 @@ function process-specimen
 {
   local subcommand="$1"
   local specimen="$2"
-  local argargs="--arg targetPath \\\"$specimen\\\""
 
   case "$subcommand" in
-    build) run nix-build $argargs "$META_NIX" ;;
-    install) run nix-env $argargs --install -f "$META_NIX" ;;
+    build) run nix-build --argstr targetPath "$specimen" "$META_NIX" ;;
+    install) run nix-env --argstr targetPath "$specimen" --install -f "$META_NIX" ;;
     *) fail "Internal error - unexpected subcommand: $subcommand"
   esac
 }
 
 function run
 {
-  #echo "Running: $*"
+  [ "${METANIX_TRACE:-0}" -eq 1 ] && echo "Running: $*"
   eval "$@"
 }
 
