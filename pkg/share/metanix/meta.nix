@@ -1,13 +1,13 @@
 let
+  imp = import ./imp.nix;
+
   inherit (builtins) foldl' pathExists throw;
   inherit (import <nixpkgs> {}) lib;
-  inherit (lib.attrsets) mapAttrsToList;
   inherit (lib.debug) traceSeq;
+  inherit (lib.attrsets) mapAttrsToList;
   inherit (lib.lists) findFirst;
 
-  handlers = import ./handlers {
-    metalib = import ./metalib;
-  };
+  handlers = mapAttrsToList (name: a: a // { inherit name; }) (imp "handlers");
 in
   { targetPath }:
   assert builtins.typeOf targetPath == "string";

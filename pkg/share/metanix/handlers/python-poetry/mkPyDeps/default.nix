@@ -1,4 +1,4 @@
-{ metalib }:
+imp:
 let
   inherit (builtins) elemAt isList length match split substring toJSON;
   nixpkgs = import <nixpkgs> {};
@@ -6,7 +6,7 @@ let
   inherit (lib.attrsets) mapAttrsToList;
   inherit (lib.lists) findFirst;
   inherit (lib.strings) hasSuffix;
-  inherit (metalib) check traceVal;
+  inherit (imp "/metalib") check;
 in
   python: poetry:
     let

@@ -1,8 +1,8 @@
-{ metalib }: python:
+imp: python:
 let
   inherit (builtins) pathExists;
-  inherit (metalib) readTOML traceVal;
-  inherit (metalib.impdir ./.) mkPyDeps;
+  inherit (imp "/metalib") readTOML;
+  mkPyDeps = imp "mkPyDeps";
   inherit (python.pkgs) buildPythonPackage fetchPypi;
 in
   buildPythonPackage rec {

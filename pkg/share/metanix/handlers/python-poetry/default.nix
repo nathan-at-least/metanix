@@ -1,9 +1,12 @@
-{ metalib }:
+imp:
 let
   inherit (builtins) pathExists;
-  inherit (import <nixpkgs> {}) stdenv writeScript symlinkJoin;
-  inherit (metalib) readTOML traceVal;
-  inherit (metalib.impdir ./.) mkPyDeps selectPython mkPoetryCore;
+  inherit (import <nixpkgs> {}) lib stdenv writeScript symlinkJoin;
+  inherit (imp "/metalib") readTOML;
+
+  mkPyDeps = imp "mkPyDeps";
+  selectPython = imp "selectPython";
+  mkPoetryCore = imp "mkPoetryCore";
 in {
   check = p: pathExists (p + "/poetry.lock");
   load = projdir:

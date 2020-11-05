@@ -1,7 +1,7 @@
-{ metalib }: poetrylock:
+imp: poetrylock:
 let
   inherit (builtins) elemAt isList length match;
-  inherit (metalib) check;
+  inherit (imp "/metalib") check;
 
   nixpkgs = import <nixpkgs> {};
 
